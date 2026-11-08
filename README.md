@@ -2,6 +2,9 @@
 
 A lightweight Chrome Extension that safely and automatically bulk deletes images and files from your **ChatGPT Library** (`https://chatgpt.com/library?tab=all`) without crashing ChatGPT or triggering bot detection.
 
+> **💡 No Terminal or Python Required!**  
+> This extension runs **100% standalone inside Google Chrome**. You do **NOT** need to install Python, run any servers, or open a terminal. Just load the extension into Chrome and click the button!
+
 ---
 
 ## 🧐 Why This Tool Was Built
@@ -18,17 +21,17 @@ This tool runs as a **standard Chrome Extension inside your everyday Chrome brow
 - ⚡ **Full Native Event Simulation:** Dispatches real pointer, mouse, and focus events with jittered delays and smooth scrolling.
 - ⏱️ **Natural Human Pauses:** Automatically pauses (2.5s to 4.5s) between batches so OpenAI's servers process each deletion cleanly.
 - 🛡️ **Human in the Loop:** Real-time visual blue highlights on what is being deleted, plus an instant **Emergency Stop** button.
-- 🔌 **Standalone:** Works completely inside Chrome via the extension popup. (No terminal or Python required for standard use!)
+- 🔌 **100% Standalone:** Works completely inside Chrome via the extension popup. No background server needed!
 
 ---
 
 ## 🛠️ Quick Installation (Takes 1 Minute)
 
-### 1. Clone or Download This Repository
+### 1. Download This Repository
 ```bash
 git clone https://github.com/kravitexx/bulk_delete_for_chatgpt.git
 ```
-*(Or click **Code > Download ZIP** on GitHub and extract it to a folder).*
+*(Or click **Code > Download ZIP** at the top of GitHub and extract it to a folder).*
 
 ### 2. Load the Extension into Chrome
 1. Open Google Chrome and go to:
@@ -44,7 +47,7 @@ git clone https://github.com/kravitexx/bulk_delete_for_chatgpt.git
 
 ---
 
-## 🚀 How to Use It
+## 🚀 How to Use It (No Server Needed!)
 
 1. Open your ChatGPT library in Chrome:
    👉 **`https://chatgpt.com/library?tab=all`**
@@ -62,9 +65,11 @@ git clone https://github.com/kravitexx/bulk_delete_for_chatgpt.git
 
 ---
 
-## 💻 Optional: Python CLI & Bridge Control (For Developers)
+## 💻 For Developers Only: Optional Python Bridge (`bridge.py`)
 
-If you prefer controlling the cleanup from your terminal or integrating with AI agent scripts:
+> **Note for standard users:** You can completely ignore `bridge.py`! The extension works standalone without it.
+
+If you are a developer and want to control the extension externally via CLI scripts or an AI coding assistant (like Antigravity / Claude):
 
 1. Install requirements:
    ```bash
@@ -90,6 +95,7 @@ If you prefer controlling the cleanup from your terminal or integrating with AI 
 
 | Feature | Description |
 |---|---|
+| **No Server Required** | Works 100% inside Chrome via native extension communication (`chrome.tabs.sendMessage`). |
 | **Randomized 6–9 Sizing** | Alternates between 6, 7, 8, and 9 items per batch to avoid server rate-limits and bot heuristics. |
 | **Visual Outlines** | Displays a glowing blue indicator over cards being selected so you can monitor progress. |
 | **Modal Confirmation** | Automatically confirms the ChatGPT deletion popup dialog. |
