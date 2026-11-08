@@ -2,136 +2,302 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ChatGPT Cleanup Agent</title>
+  <title>ChatGPT Library Cleaner</title>
   <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(255, 255, 255, 0.035);
+      --card-border: rgba(255, 255, 255, 0.07);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
       width: 320px;
-      margin: 0;
       padding: 16px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(140% 120% at 50% 0%, #151d2f 0%, #070a12 100%);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
     }
-    h2 {
-      font-size: 15px;
-      margin: 0 0 12px 0;
+
+    /* Header */
+    .header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      margin-bottom: 14px;
     }
-    .badge {
-      display: inline-block;
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .pulse-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #ef4444;
+      background: var(--danger);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+      transition: all 0.3s ease;
     }
-    .badge.connected {
-      background: #10b981;
+
+    .pulse-dot.connected {
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
     }
-    .status-box {
-      background: #1e293b;
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 12px;
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .title {
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+      color: #fff;
+    }
+
+    .subtitle {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .version-tag {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Status Card */
+    .status-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 10px;
+      padding: 9px 12px;
       margin-bottom: 12px;
-      border: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    .status-row {
+
+    .status-item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
+      align-items: center;
+      font-size: 11.5px;
     }
-    .status-row:last-child {
-      margin-bottom: 0;
-    }
+
     .status-label {
-      color: #94a3b8;
+      color: var(--text-dim);
+      font-weight: 500;
     }
+
+    .status-val {
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .button-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 12px;
+    }
+
     .btn {
       width: 100%;
-      padding: 9px;
-      border-radius: 6px;
+      padding: 9px 12px;
+      border-radius: 8px;
       border: none;
-      font-weight: 600;
+      font-family: inherit;
       font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
-      margin-bottom: 8px;
-      transition: background 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+      outline: none;
     }
-    .btn-primary {
-      background: #0284c7;
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Primary Hero Action */
+    .btn-hero {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+      padding: 10.5px 12px;
+      font-size: 12.5px;
     }
-    .btn-primary:hover {
-      background: #0369a1;
+
+    .btn-hero:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
     }
-    .btn-action {
-      background: #f59e0b;
-      color: #0f172a;
-    }
-    .btn-action:hover {
-      background: #d97706;
-    }
-    .btn-loop {
-      background: #059669;
-      color: #fff;
-    }
-    .btn-loop:hover {
-      background: #047857;
-    }
-    .btn-danger {
-      background: #dc2626;
-      color: #fff;
-    }
-    .btn-danger:hover {
-      background: #b91c1c;
-    }
-    .btn-secondary {
-      background: #334155;
+
+    /* Secondary Glass Actions */
+    .btn-glass {
+      background: rgba(255, 255, 255, 0.04);
       color: #e2e8f0;
+      border: 1px solid var(--card-border);
     }
-    .btn-secondary:hover {
-      background: #475569;
+
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #fff;
     }
+
+    /* Grid Row for utilities */
+    .btn-row {
+      display: flex;
+      gap: 7px;
+    }
+
+    .btn-danger-ghost {
+      background: rgba(239, 68, 68, 0.09);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger-ghost:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+
+    .btn-muted {
+      background: rgba(255, 255, 255, 0.025);
+      color: var(--text-dim);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-muted:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+    }
+
+    /* Log Box */
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 5px;
+      padding: 0 2px;
+    }
+
     .output-log {
-      max-height: 100px;
+      max-height: 85px;
       overflow-y: auto;
-      font-family: monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 11px;
-      background: #090d16;
-      border-radius: 6px;
-      padding: 8px;
-      color: #38bdf8;
-      border: 1px solid #1e293b;
+      line-height: 1.45;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: #7dd3fc;
+      border: 1px solid rgba(255, 255, 255, 0.04);
       white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .output-log::-webkit-scrollbar {
+      width: 4px;
+    }
+    .output-log::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
-  <h2>
-    <span id="bridge-dot" class="badge"></span>
-    ChatGPT Cleanup Agent
-  </h2>
 
-  <div class="status-box">
-    <div class="status-row">
-      <span class="status-label">Local Bridge:</span>
-      <span id="bridge-status">Checking...</span>
+  <!-- Top Header -->
+  <div class="header">
+    <div class="brand">
+      <div id="bridge-dot" class="pulse-dot"></div>
+      <div class="title-group">
+        <span class="title">ChatGPT Bulk Cleaner</span>
+        <span class="subtitle">Personal Library Optimizer</span>
+      </div>
     </div>
-    <div class="status-row">
-      <span class="status-label">Target Page:</span>
-      <span id="tab-status">Scanning...</span>
+    <span class="version-tag">v1.2</span>
+  </div>
+
+  <!-- Status Info -->
+  <div class="status-card">
+    <div class="status-item">
+      <span class="status-label">Active Tab</span>
+      <span id="tab-status" class="status-val">Scanning...</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Engine Bridge</span>
+      <span id="bridge-status" class="status-val">Standalone Mode</span>
     </div>
   </div>
 
-  <button id="btn-scan" class="btn btn-primary">🔍 Inspect & Scan Page</button>
-  <button id="btn-loop" class="btn btn-loop">🔁 Start Auto Loop (Random 6-9)</button>
-  <button id="btn-batch" class="btn btn-action">🗑️ Delete 1 Batch (Random 6-9)</button>
-  <button id="btn-stop" class="btn btn-danger">⛔ Emergency Stop</button>
-  <button id="btn-reset" class="btn btn-secondary">🔄 Reset Stop Flag</button>
+  <!-- Action Stack -->
+  <div class="button-stack">
+    <!-- Hero Action: Auto Loop -->
+    <button id="btn-loop" class="btn btn-hero">
+      <span>▶</span> Start Auto Loop (Random 6-9)
+    </button>
 
-  <div id="log" class="output-log">Ready. Connect Python bridge to start.</div>
+    <!-- Secondary Row: Scan & Single Batch -->
+    <div class="btn-row">
+      <button id="btn-scan" class="btn btn-glass" style="flex: 1;">
+        <span>🔍</span> Scan Page
+      </button>
+      <button id="btn-batch" class="btn btn-glass" style="flex: 1.2;">
+        <span>🗑️</span> 1 Batch (6-9)
+      </button>
+    </div>
+
+    <!-- Utility Row: Stop & Reset -->
+    <div class="btn-row">
+      <button id="btn-stop" class="btn btn-danger-ghost" style="flex: 1.2;">
+        <span>⛔</span> Stop
+      </button>
+      <button id="btn-reset" class="btn btn-muted" style="flex: 1;">
+        <span>🔄</span> Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- Live Activity Console -->
+  <div class="console-header">
+    <span>ACTIVITY LOG</span>
+  </div>
+  <div id="log" class="output-log">Ready. Click "Start Auto Loop" to begin.</div>
 
   <script src="popup.js"></script>
 </body>

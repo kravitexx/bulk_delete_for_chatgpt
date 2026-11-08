@@ -18,13 +18,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Check bridge status
   chrome.runtime.sendMessage({ action: "get_bridge_status" }, (res) => {
     if (res && res.connected) {
-      bridgeDot.className = "badge connected";
-      bridgeStatus.innerText = "Connected (Port 8765)";
-      bridgeStatus.style.color = "#10b981";
+      bridgeDot.className = "pulse-dot connected";
+      bridgeStatus.innerText = "CLI Bridge (8765)";
+      bridgeStatus.style.color = "#38bdf8";
     } else {
-      bridgeDot.className = "badge";
-      bridgeStatus.innerText = "Offline (run bridge.py)";
-      bridgeStatus.style.color = "#ef4444";
+      bridgeStatus.innerText = "Standalone Native";
+      bridgeStatus.style.color = "#94a3b8";
     }
   });
 
@@ -32,10 +31,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const currentTab = tabs[0];
   if (currentTab && currentTab.url && currentTab.url.includes("chatgpt.com")) {
+    bridgeDot.className = "pulse-dot connected";
     tabStatus.innerText = "ChatGPT Active";
     tabStatus.style.color = "#10b981";
   } else {
-    tabStatus.innerText = "Not ChatGPT";
+    bridgeDot.className = "pulse-dot";
+    tabStatus.innerText = "Open chatgpt.com";
     tabStatus.style.color = "#f59e0b";
   }
 

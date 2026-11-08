@@ -14,32 +14,44 @@
     const badge = document.createElement("div");
     badge.id = "cleanup-agent-badge";
     badge.style.position = "fixed";
-    badge.style.bottom = "20px";
-    badge.style.right = "20px";
+    badge.style.bottom = "24px";
+    badge.style.right = "24px";
     badge.style.zIndex = "999999";
-    badge.style.backgroundColor = "rgba(15, 23, 42, 0.95)";
+    badge.style.background = "rgba(10, 15, 29, 0.85)";
     badge.style.color = "#f8fafc";
-    badge.style.border = "1px solid #38bdf8";
-    badge.style.borderRadius = "10px";
-    badge.style.padding = "10px 14px";
-    badge.style.fontFamily = "system-ui, -apple-system, sans-serif";
-    badge.style.fontSize = "13px";
-    badge.style.boxShadow = "0 8px 24px rgba(0,0,0,0.4)";
+    badge.style.border = "1px solid rgba(255, 255, 255, 0.1)";
+    badge.style.borderRadius = "30px";
+    badge.style.padding = "7px 14px";
+    badge.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif";
+    badge.style.fontSize = "12px";
+    badge.style.letterSpacing = "-0.01em";
+    badge.style.boxShadow = "0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05)";
     badge.style.display = "flex";
     badge.style.alignItems = "center";
-    badge.style.gap = "10px";
-    badge.style.backdropFilter = "blur(8px)";
-    badge.style.transition = "all 0.2s ease";
+    badge.style.gap = "9px";
+    badge.style.backdropFilter = "blur(16px)";
+    badge.style.webkitBackdropFilter = "blur(16px)";
+    badge.style.transition = "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)";
 
     badge.innerHTML = `
-      <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#10b981;" id="cleanup-badge-dot"></span>
-      <span id="cleanup-badge-text" style="font-weight: 500;">Agent: Ready</span>
-      <button id="cleanup-badge-stop" style="background:#ef4444; color:#fff; border:none; border-radius:5px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">Emergency Stop</button>
+      <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;" id="cleanup-badge-dot"></span>
+      <span id="cleanup-badge-text" style="font-weight: 500; color:#e2e8f0;">Ready</span>
+      <button id="cleanup-badge-stop" style="background:rgba(239, 68, 68, 0.14); color:#fca5a5; border:1px solid rgba(239, 68, 68, 0.25); border-radius:20px; padding:3px 9px; font-size:10.5px; font-weight:600; cursor:pointer; transition:all 0.15s ease;">Stop</button>
     `;
 
     document.body.appendChild(badge);
 
-    document.getElementById("cleanup-badge-stop").addEventListener("click", () => {
+    const stopBtn = document.getElementById("cleanup-badge-stop");
+    stopBtn.addEventListener("mouseenter", () => {
+      stopBtn.style.background = "rgba(239, 68, 68, 0.25)";
+      stopBtn.style.color = "#fff";
+    });
+    stopBtn.addEventListener("mouseleave", () => {
+      stopBtn.style.background = "rgba(239, 68, 68, 0.14)";
+      stopBtn.style.color = "#fca5a5";
+    });
+
+    stopBtn.addEventListener("click", () => {
       triggerEmergencyStop("User clicked on-screen Emergency Stop button");
     });
   }
