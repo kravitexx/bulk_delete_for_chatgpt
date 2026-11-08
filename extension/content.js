@@ -71,6 +71,92 @@
     console.warn("[CleanupAgent] Emergency stop triggered:", reason);
   }
 
+  // Monitor network drop
+  window.addEventListener("offline", () => {
+    triggerEmergencyStop("Network connection lost (offline)");
+  });
+
+  // --- Audit Log in chrome.storage.local ---
+  async function recordConfirmedDeletions(fileNames) {
+    try {
+      const res = await chrome.storage.local.get(["deletion_log"]);
+      const log = res.deletion_log || [];
+      log.push({
+        timestamp: new Date().toISOString(),
+        files: fileNames,
+        count: fileNames.length,
+      });
+      await chrome.storage.local.set({ deletion_log: log });
+      console.log(`[CleanupAgent] Recorded ${fileNames.length} deleted files to audit log.`);
+    } catch (e) {
+      console.warn("[CleanupAgent] Storage log write error:", e);
+    }
+  }
+
+  async function getDeletionLog() {
+    try {
+      const res = await chrome.storage.local.get(["deletion_log"]);
+      return res.deletion_log || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function clearDeletionLog() {
+    try {
+      await chrome.storage.local.remove(["deletion_log"]);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
+
+  // --- Error Toast Detector (Detects OpenAI Server Errors) ---
+  function checkForErrorToast() {
+    const alerts = Array.from(
+      document.querySelectorAll("[role='alert'], div[class*='toast'], div[class*='error'], div[class*='banner']")
+    ).filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+
+    for (const a of alerts) {
+      const text = (a.innerText || "").toLowerCase();
+      if (
+        text.includes("fail") ||
+        text.includes("error") ||
+        text.includes("could not") ||
+        text.includes("problem") ||
+        text.includes("try again") ||
+        text.includes("something went wrong")
+      ) {
+        return a.innerText.trim();
+      }
+    }
+    return null;
+  }
+
+  // --- Extract Friendly Item Filename ---
+  function extractItemName(item, fallbackIdx = 0) {
+    if (item.element) {
+      const aria = item.element.getAttribute("aria-label") || "";
+      if (aria.startsWith("Select ")) {
+        return aria.replace(/^Select\s+/, "").trim();
+      }
+    }
+    if (item.cardElement) {
+      const btn = item.cardElement.querySelector(
+        "button[aria-label$='.jpg'], button[aria-label$='.png'], button[aria-label$='.webp']"
+      );
+      if (btn) return btn.getAttribute("aria-label").trim();
+      const img = item.cardElement.querySelector("img");
+      if (img && img.alt && img.alt !== "Image") return img.alt.trim();
+      const firstText = (item.cardElement.innerText || "").split("\n")[0].trim();
+      if (firstText && firstText.length < 50) return firstText;
+    }
+    return `item_${fallbackIdx + 1}`;
+  }
+
   // --- Human-Like Helpers ---
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -418,6 +504,15 @@
   async function performBatchDelete(batchSize = 0) {
     if (emergencyStop) throw new Error("Emergency stop is active. Reset first.");
 
+    if (!navigator.onLine) {
+      throw new Error("Network connection is offline. Aborting batch to prevent inconsistency.");
+    }
+
+    const preError = checkForErrorToast();
+    if (preError) {
+      throw new Error(`OpenAI error banner detected: "${preError}". Aborting.`);
+    }
+
     // If batch size is 0 or not specified, pick randomly between 6 and 9
     const actualBatchSize = (batchSize && batchSize > 0) ? batchSize : getRandomBatchSize(6, 9);
 
@@ -448,21 +543,27 @@
       return { success: false, deleted_in_batch: 0, message: "No unselected items remaining to select." };
     }
 
+    // Extract target file names for preview and audit record
+    const targetNames = toSelect.map((it, idx) => extractItemName(it, idx));
+    console.log(`[CleanupAgent] Target batch items (${targetNames.length}):`, targetNames);
+
     console.log(`[CleanupAgent] Selecting ${toSelect.length} items (random 6-9 mode) with human delays...`);
 
     // 3. Select each item one by one
     for (let i = 0; i < toSelect.length; i++) {
       if (emergencyStop) throw new Error("Emergency stop interrupted batch selection.");
+      if (!navigator.onLine) throw new Error("Network dropped during item selection. Halting.");
 
       const item = toSelect[i];
-      updateBadge(`Selecting item ${i + 1}/${toSelect.length}...`, "#38bdf8");
+      const fname = targetNames[i] || `item #${i + 1}`;
+      updateBadge(`Selecting: ${fname.slice(0, 18)}...`, "#38bdf8");
 
       if (item.cardElement) {
         item.cardElement.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
         await sleep(60);
       }
 
-      await humanClick(item.element, `Select #${i + 1}`);
+      await humanClick(item.element, `Select: ${fname.slice(0, 16)}`);
       await randomDelay(250, 500);
     }
 
@@ -502,14 +603,38 @@
       await randomDelay(1500, 2500);
     }
 
-    updateBadge(`Batch of ${toSelect.length} deleted!`, "#10b981");
+    // --- Post-Delete Fail-Safe Verification ---
+    const postError = checkForErrorToast();
+    if (postError) {
+      throw new Error(`OpenAI reported an error after deletion: "${postError}". Halting loop.`);
+    }
 
-    const remaining = findSelectableItems().filter(i => !i.checked).length;
+    // Verify elements disappeared from DOM
+    let stillPresent = 0;
+    for (const it of toSelect) {
+      if (document.body.contains(it.element) && it.element.getBoundingClientRect().width > 0) {
+        stillPresent++;
+      }
+    }
+
+    if (stillPresent > toSelect.length / 2) {
+      throw new Error(
+        `Verification failed: ${stillPresent}/${toSelect.length} items are still visible after deletion. Halting to prevent data desync.`
+      );
+    }
+
+    // Record verified deletions to persistent audit log
+    await recordConfirmedDeletions(targetNames);
+
+    updateBadge(`Batch of ${toSelect.length} deleted & verified!`, "#10b981");
+
+    const remaining = findSelectableItems().filter((i) => !i.checked).length;
     return {
       success: true,
       deleted_in_batch: toSelect.length,
+      deleted_files: targetNames,
       approx_remaining: remaining,
-      message: `Successfully deleted batch of ${toSelect.length} items.`,
+      message: `Successfully deleted & verified batch of ${toSelect.length} items.`,
     };
   }
 
@@ -519,6 +644,7 @@
 
     let totalDeleted = 0;
     let completedBatches = 0;
+    const allDeletedFiles = [];
 
     console.log(`[CleanupAgent] Starting auto loop deletion (up to ${maxBatches} batches)...`);
 
@@ -526,6 +652,11 @@
       if (emergencyStop) {
         console.warn("[CleanupAgent] Loop stopped by Emergency Stop.");
         break;
+      }
+
+      if (!navigator.onLine) {
+        updateBadge("Loop Stopped: Network Offline", "#ef4444");
+        throw new Error("Network connection dropped. Halting loop to protect data integrity.");
       }
 
       // Check available items
@@ -539,7 +670,23 @@
       const randomTarget = getRandomBatchSize(6, 9);
       updateBadge(`Loop: Batch ${b}/${maxBatches} (Target: ${randomTarget})...`, "#f59e0b");
 
-      const res = await performBatchDelete(randomTarget);
+      // Strict fail-stop: if any batch fails, HALT immediately
+      let res;
+      try {
+        res = await performBatchDelete(randomTarget);
+      } catch (batchErr) {
+        updateBadge(`Loop Stopped: ${batchErr.message.slice(0, 24)}...`, "#ef4444");
+        console.error("[CleanupAgent] Loop halted due to error in batch:", batchErr);
+        return {
+          success: false,
+          stopped_on_error: true,
+          error: batchErr.message,
+          completed_batches: completedBatches,
+          total_deleted: totalDeleted,
+          message: `Loop safely halted on error: ${batchErr.message}. Total ${totalDeleted} files confirmed deleted.`,
+        };
+      }
+
       if (!res.success || res.deleted_in_batch === 0) {
         console.log("[CleanupAgent] No items deleted in this batch. Ending loop.");
         break;
@@ -547,6 +694,9 @@
 
       totalDeleted += res.deleted_in_batch;
       completedBatches++;
+      if (res.deleted_files) {
+        allDeletedFiles.push(...res.deleted_files);
+      }
 
       // Check if more items remain
       const remainingAfter = findSelectableItems().filter((i) => !i.checked);
@@ -566,7 +716,8 @@
       success: true,
       completed_batches: completedBatches,
       total_deleted: totalDeleted,
-      message: `Loop completed: ${completedBatches} batches processed, ${totalDeleted} images deleted in total.`,
+      deleted_files: allDeletedFiles,
+      message: `Loop completed: ${completedBatches} batches processed, ${totalDeleted} images verified deleted.`,
     };
   }
 
@@ -659,6 +810,37 @@
         .then((res) => sendResponse({ status: "success", result: res }))
         .catch((err) => sendResponse({ status: "error", error: err.message }));
       return true;
+    }
+
+    if (request.action === "get_deletion_log") {
+      getDeletionLog()
+        .then((log) => sendResponse({ status: "success", log }))
+        .catch((err) => sendResponse({ status: "error", error: err.message }));
+      return true;
+    }
+
+    if (request.action === "clear_deletion_log") {
+      clearDeletionLog()
+        .then((res) => sendResponse({ status: "success", ...res }))
+        .catch((err) => sendResponse({ status: "error", error: err.message }));
+      return true;
+    }
+
+    if (request.action === "preview_next") {
+      try {
+        const count = request.count || 7;
+        const unselected = findSelectableItems().filter((i) => !i.checked);
+        const previewItems = unselected.slice(0, count).map((it, idx) => extractItemName(it, idx));
+        sendResponse({
+          status: "success",
+          count: previewItems.length,
+          total_unselected: unselected.length,
+          files: previewItems,
+        });
+      } catch (err) {
+        sendResponse({ status: "error", error: err.message });
+      }
+      return false;
     }
 
     if (request.action === "evaluate") {

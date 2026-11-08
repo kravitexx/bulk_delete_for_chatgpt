@@ -202,6 +202,47 @@
       color: var(--text-muted);
     }
 
+    /* Audit Bar */
+    .audit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+      padding: 0 2px;
+    }
+
+    .audit-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: #38bdf8;
+      font-size: 10.5px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .link-btn:hover {
+      color: #7dd3fc;
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .danger-link {
+      color: #94a3b8;
+    }
+
+    .danger-link:hover {
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
     /* Log Box */
     .console-header {
       display: flex;
@@ -263,6 +304,10 @@
       <span class="status-label">Engine Bridge</span>
       <span id="bridge-status" class="status-val">Standalone Mode</span>
     </div>
+    <div class="status-item">
+      <span class="status-label">Confirmed Deleted</span>
+      <span id="audit-count" class="status-val">0 files</span>
+    </div>
   </div>
 
   <!-- Action Stack -->
@@ -290,6 +335,15 @@
       <button id="btn-reset" class="btn btn-muted" style="flex: 1;">
         <span>🔄</span> Reset
       </button>
+    </div>
+  </div>
+
+  <!-- Audit & Preview Row -->
+  <div class="audit-row">
+    <button id="btn-preview" class="link-btn">👁️ Preview Next Batch</button>
+    <div class="audit-links">
+      <button id="btn-export-log" class="link-btn">📥 Export Audit Log</button>
+      <button id="btn-clear-log" class="link-btn danger-link">Clear</button>
     </div>
   </div>
 

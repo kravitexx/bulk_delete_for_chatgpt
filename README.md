@@ -21,6 +21,7 @@ This tool runs as a **standard Chrome Extension inside your everyday Chrome brow
 - ⚡ **Full Native Event Simulation:** Dispatches real pointer, mouse, and focus events with jittered delays and smooth scrolling.
 - ⏱️ **Natural Human Pauses:** Automatically pauses (2.5s to 4.5s) between batches so OpenAI's servers process each deletion cleanly.
 - 🛡️ **Human in the Loop:** Real-time visual blue highlights on what is being deleted, plus an instant **Emergency Stop** button.
+- 📜 **Audit Log & History:** Keeps a persistent record of all confirmed deleted files, exportable to a text file with one click.
 - 🔌 **100% Standalone:** Works completely inside Chrome via the extension popup. No background server needed!
 
 ---
@@ -54,14 +55,43 @@ git clone https://github.com/kravitexx/bulk_delete_for_chatgpt.git
    *(Make sure you are logged in).*
 
 2. Look at the bottom-right corner of the webpage—you will see a small status badge:
-   `🟢 Agent: Ready [Emergency Stop]`
+   `🟢 Ready [Stop]`
 
 3. Click the **ChatGPT Cleanup Agent** icon in your Chrome extensions toolbar:
-   - Click **`🔁 Start Auto Loop (Random 6-9)`** to automatically clean up all visible library images in randomized batches.
-   - Or click **`🗑️ Delete 1 Batch (Random 6-9)`** if you want to delete just one batch at a time.
+   - Click **`👁️ Preview Next Batch`** to see the exact filenames that will be deleted next.
+   - Click **`🔁 Start Auto Loop (Random 6-9)`** to automatically clean up visible library images in randomized batches.
+   - Click **`🗑️ Delete 1 Batch (Random 6-9)`** to delete just one single batch.
+   - Click **`📥 Export Audit Log`** at any time to download a timestamped record of all confirmed deletions.
 
 4. **Emergency Stop:** 
-   Click the red **⛔ Emergency Stop** button in the popup or on your screen at any moment to immediately halt operations.
+   Click the red **⛔ Stop** button in the popup or on your screen at any moment to immediately halt operations.
+
+---
+
+## 🛡️ Safety, Verification & Edge Cases
+
+When running automated deletions, safety and predictability are critical:
+
+### 1. Pre-Deletion File Preview
+Before deleting, click **"Preview Next Batch"** in the popup to see a list of the exact filenames scheduled for the next batch.
+
+### 2. Persistent Deletion Audit Log
+Every confirmed deletion is permanently logged with timestamps to your local Chrome storage (`chrome.storage.local`). You can click **"Export Audit Log"** anytime to download `chatgpt_deletion_log.txt` showing every file that was removed.
+
+### 3. Strict Fail-Stop Verification (No Blind Continuation)
+If an item fails to delete, OpenAI displays an error toast, or the DOM does not update after the modal confirmation:
+- The extension **immediately halts the loop**.
+- It does **not** proceed to the next batch.
+- It displays the exact error message so you can inspect the tab before taking further action.
+
+### 4. Network Disconnection Guard
+The extension continuously monitors network connectivity via `navigator.onLine`. If your Wi-Fi or connection drops halfway through a batch, the script terminates immediately to prevent partial state mismatches.
+
+### 5. Page Reload & Crash Safety
+All loop automation runs in-memory inside the active DOM. If the webpage reloads, refreshes, or crashes, **the loop stops dead in its tracks**. It will never run autonomously or unattended in the background across page reloads.
+
+### 6. Recommended: Backup First
+Because file deletions in ChatGPT cannot be undone, we recommend downloading any critical images or requesting a data export (*Settings > Data Controls > Export data*) before executing large bulk deletions.
 
 ---
 
@@ -96,9 +126,12 @@ If you are a developer and want to control the extension externally via CLI scri
 | Feature | Description |
 |---|---|
 | **No Server Required** | Works 100% inside Chrome via native extension communication (`chrome.tabs.sendMessage`). |
+| **Audit Trail** | Automatically records all confirmed deletions; exportable with one click. |
+| **Batch Preview** | Inspects and displays the exact filenames about to be deleted. |
+| **Fail-Stop Protection** | Immediately halts if a deletion fails, server errors occur, or the DOM desyncs. |
+| **Network Guard** | Automatically stops if internet connection drops mid-batch. |
 | **Randomized 6–9 Sizing** | Alternates between 6, 7, 8, and 9 items per batch to avoid server rate-limits and bot heuristics. |
 | **Visual Outlines** | Displays a glowing blue indicator over cards being selected so you can monitor progress. |
-| **Modal Confirmation** | Automatically confirms the ChatGPT deletion popup dialog. |
 | **Emergency Stop** | Available both on-page and in the popup for instant cancellation. |
 
 ---
