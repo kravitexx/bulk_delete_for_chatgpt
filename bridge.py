@@ -148,6 +148,7 @@ class BridgeHTTPHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+        query = urllib.parse.parse_qs(parsed.query)
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else "{}"
         
@@ -165,7 +166,7 @@ class BridgeHTTPHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/test":
-            count = int(query.get("count", [2])[0])
+            count = payload.get("count", int(query.get("count", [2])[0]))
             self._handle_action("select_test", count=count)
             return
 
